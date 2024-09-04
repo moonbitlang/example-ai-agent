@@ -1,0 +1,1 @@
+{ "import": [{ "path" : "moonbit/spin/ffi", "alias" : "ffi" }, { "path" : "moonbit/spin/interface/imports/fermyon/spin/rdbmsTypes", "alias" : "rdbmsTypes" }] }

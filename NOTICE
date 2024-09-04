@@ -1,0 +1,3 @@
+This project uses WIT files from [spin](https://github.com/fermyon/spin) and [wit-bindgen](https://github.com/bytecodealliance/wit-bindgen)
+to generate code under `interface` `gen` and `ffi`.
+Both of the projects are licensed under Apache 2 License with LLVM exceptions.

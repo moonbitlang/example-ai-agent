@@ -1,0 +1,13 @@
+{
+  "import": [
+    {
+      "path": "moonbit/spin/interface/imports/wasi/http/types",
+      "alias": "types"
+    },
+    "moonbit/spin/interface/imports/wasi/http/outgoingHandler",
+    "moonbit/spin/interface/imports/wasi/io/streams",
+    "moonbit/spin/interface/imports/wasi/io/poll",
+    "moonbit/spin/utils",
+    "moonbit/spin/io"
+  ]
+}

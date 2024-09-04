@@ -1,0 +1,31 @@
+{
+      "link": {
+            "wasm": {
+                  "exports": [
+                        "cabi_realloc:cabi_realloc",
+                        "wasmExportHandle:wasi:http/incoming-handler@0.2.0#handle"
+                  ],
+                  "export-memory-name": "memory",
+                  "heap-start-address": 16
+            }
+      },
+      "import": [
+        {
+          "path": "moonbit/spin/ffi",
+          "alias": "ffi"
+        },
+        {
+          "path": "moonbit/spin/interface/imports/wasi/http/types",
+          "alias": "types"
+        },
+        "moonbit/spin/http",
+        "moonbit/spin/utils",
+        "moonbit/spin/io",
+        "moonbit/spin/interface/imports/wasi/cli/stdout",
+        "moonbit/spin/interface/imports/wasi/io/streams",
+        "moonbit/spin/interface/imports/wasi/cli/stderr",
+        "moonbit/spin/interface/imports/wasi/cli/environment",
+        "moonbit/spin/interface/imports/fermyon/spin/variables",
+        "moonbit/spin/crypto"
+      ]
+}

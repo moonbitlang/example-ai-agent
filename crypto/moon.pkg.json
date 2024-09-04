@@ -1,0 +1,10 @@
+{
+  "import": [
+    "moonbit/spin/utils",
+    "moonbitlang/x/crypto",
+    "moonbit/spin/interface/imports/fermyon/spin/variables",
+    "moonbit/spin/interface/imports/wasi/clocks/wallClock",
+    "moonbit/spin/io",
+    "moonbit/spin/interface/imports/wasi/cli/stdout"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "moonbit/spin",
+  "deps": {
+    "moonbitlang/x": "0.4.6"
+  }
+}

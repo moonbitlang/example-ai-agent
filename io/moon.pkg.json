@@ -1,0 +1,10 @@
+{
+  "import": [
+    "moonbit/spin/interface/imports/wasi/io/streams",
+    "moonbit/spin/interface/imports/wasi/io/error",
+    "moonbit/spin/utils",
+    "moonbit/spin/interface/imports/wasi/cli/stderr",
+    "moonbit/spin/interface/imports/wasi/cli/stdout",
+    "moonbit/spin/interface/imports/wasi/cli/stdin"
+  ]
+}
