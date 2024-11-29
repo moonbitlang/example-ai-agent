@@ -14,35 +14,35 @@
 
 // rfc8017
 
-pub struct RSAPubKey {
+pub(all) struct RSAPubKey {
   modulus : BigInt
   exponent : BigInt
   length : Int
 }
 
-pub enum RSAPrivKey {
-  Pair(~modulus : BigInt, ~exponent : BigInt, ~length : Int)
+pub(all) enum RSAPrivKey {
+  Pair(modulus~ : BigInt, exponent~ : BigInt, length~ : Int)
   Quintuple(
-    ~factor1 : BigInt,
-    ~factor2 : BigInt,
-    ~exponent1 : BigInt,
-    ~exponent2 : BigInt,
-    ~coefficient : BigInt,
-    ~triplets : Array[(BigInt, BigInt, BigInt)],
-    ~length : Int
+    factor1~ : BigInt,
+    factor2~ : BigInt,
+    exponent1~ : BigInt,
+    exponent2~ : BigInt,
+    coefficient~ : BigInt,
+    triplets~ : Array[(BigInt, BigInt, BigInt)],
+    length~ : Int
   )
 }
 
 pub fn rsassa_pkcs1_v1_5_sign(
   bytes : Iter[Byte],
   priv_key : RSAPrivKey,
-  ~hash : HashAlgorithm = SHA256
+  hash~ : HashAlgorithm = SHA256
 ) -> BigInt {
   match priv_key {
-    Pair(~modulus, ~exponent, ~length) => {
-      let padded = emsa_pkcs1_v1_5(bytes, length / 8, ~hash)
+    Pair(modulus~, exponent~, length~) => {
+      let padded = emsa_pkcs1_v1_5(bytes, length / 8, hash~)
       let hex = BigInt::from_octets(padded)
-      hex.pow(exponent, ~modulus)
+      hex.pow(exponent, modulus~)
     }
     Quintuple(
       factor1=p,
@@ -50,10 +50,10 @@ pub fn rsassa_pkcs1_v1_5_sign(
       exponent1=dP,
       exponent2=dQ,
       coefficient=qInv,
-      ~triplets,
-      ~length
+      triplets~,
+      length~
     ) => {
-      let padded = emsa_pkcs1_v1_5(bytes, length / 8, ~hash)
+      let padded = emsa_pkcs1_v1_5(bytes, length / 8, hash~)
       let hex = BigInt::from_octets(padded)
       let ss = [
           hex.pow(dP, modulus=p),
@@ -80,19 +80,19 @@ pub fn rsassa_pkcs1_v1_5_verify(
   modulus : BigInt,
   exponent : BigInt,
   signature : BigInt,
-  ~hash : HashAlgorithm = SHA256,
-  ~length : Int = 2048
+  hash~ : HashAlgorithm = SHA256,
+  length~ : Int = 2048
 ) -> Bool {
-  let padded = emsa_pkcs1_v1_5(bytes, length / 8, ~hash)
+  let padded = emsa_pkcs1_v1_5(bytes, length / 8, hash~)
   let number = BigInt::from_octets(padded)
-  let decoded = signature.pow(exponent, ~modulus)
+  let decoded = signature.pow(exponent, modulus~)
   number == decoded
 }
 
 fn emsa_pkcs1_v1_5(
   message : Iter[Byte],
   emLen : Int,
-  ~hash : HashAlgorithm = SHA256
+  hash~ : HashAlgorithm = SHA256
 ) -> Bytes {
   let h = hash.hash(message)
   let digest_info : X690 = {

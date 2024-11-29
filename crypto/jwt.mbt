@@ -66,9 +66,9 @@ pub fn jwt() -> Iter[Char] {
       Quintuple(
         factor1=prime1,
         factor2=prime2,
-        ~exponent1,
-        ~exponent2,
-        ~coefficient,
+        exponent1~,
+        exponent2~,
+        coefficient~,
         triplets=[],
         length=modulus.to_octets().length() * 8,
       ),

@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 pub fn wasmExportHandle(p0 : Int, p1 : Int) -> Unit {
   server.serve()(
     @types.IncomingRequest::IncomingRequest(p0),

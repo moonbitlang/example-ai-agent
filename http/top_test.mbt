@@ -21,8 +21,8 @@ test "route" {
         fn(_request : @http.Request) {
           @http.Response::{
             status: 200,
-            headers: {  },
-            body: { content: [b"Hello!"].iter(), trailers: fn() { Ok({  }) } },
+            headers: {},
+            body: { content: [b"Hello!"].iter(), trailers: fn() { Ok({}) } },
           }
           |> Ok
         },
@@ -37,11 +37,8 @@ test "route" {
             fn(_request : @http.Request) {
               @http.Response::{
                 status: 200,
-                headers: {  },
-                body: {
-                  content: [b"API v1"].iter(),
-                  trailers: fn() { Ok({  }) },
-                },
+                headers: {},
+                body: { content: [b"API v1"].iter(), trailers: fn() { Ok({}) } },
               }
               |> Ok
             },
@@ -52,11 +49,8 @@ test "route" {
             fn(_request : @http.Request) {
               @http.Response::{
                 status: 200,
-                headers: {  },
-                body: {
-                  content: [b"API v2"].iter(),
-                  trailers: fn() { Ok({  }) },
-                },
+                headers: {},
+                body: { content: [b"API v2"].iter(), trailers: fn() { Ok({}) } },
               }
               |> Ok
             },
@@ -77,10 +71,10 @@ test "route" {
               .eachi(fn { i, c => role_bytes[i] = c.to_int().to_byte() })
               @http.Response::{
                 status: 200,
-                headers: {  },
+                headers: {},
                 body: {
                   content: [b"API v3:", user_bytes, b":", role_bytes].iter(),
-                  trailers: fn() { Ok({  }) },
+                  trailers: fn() { Ok({}) },
                 },
               }
               |> Ok
@@ -94,8 +88,8 @@ test "route" {
     not_found=fn() {
       {
         status: 404,
-        headers: {  },
-        body: { content: [b"Not found"].iter(), trailers: fn() { Ok({  }) } },
+        headers: {},
+        body: { content: [b"Not found"].iter(), trailers: fn() { Ok({}) } },
       }
     },
   )
@@ -104,12 +98,12 @@ test "route" {
       path: "/hello",
       query: "",
       fragment: "",
-      context: {  },
+      context: {},
       method: @types.Get,
       scheme: None,
       authority: None,
-      headers: {  },
-      body: { content: [].iter(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: [].iter(), trailers: fn() { Ok({}) } },
     },
   )
   inspect!(
@@ -125,12 +119,12 @@ test "route" {
       path: "/api/v1",
       query: "",
       fragment: "",
-      context: {  },
+      context: {},
       method: @types.Get,
       scheme: None,
       authority: None,
-      headers: {  },
-      body: { content: [].iter(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: [].iter(), trailers: fn() { Ok({}) } },
     },
   )
   inspect!(
@@ -146,12 +140,12 @@ test "route" {
       path: "/api/v2",
       query: "",
       fragment: "",
-      context: {  },
+      context: {},
       method: @types.Get,
       scheme: None,
       authority: None,
-      headers: {  },
-      body: { content: [].iter(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: [].iter(), trailers: fn() { Ok({}) } },
     },
   )
   inspect!(
@@ -167,12 +161,12 @@ test "route" {
       path: "/api/v3/alice/admin",
       query: "",
       fragment: "",
-      context: {  },
+      context: {},
       method: @types.Get,
       scheme: None,
       authority: None,
-      headers: {  },
-      body: { content: [].iter(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: [].iter(), trailers: fn() { Ok({}) } },
     },
   )
   inspect!(
@@ -188,12 +182,12 @@ test "route" {
       path: "/whatever",
       query: "",
       fragment: "",
-      context: {  },
+      context: {},
       method: @types.Get,
       scheme: None,
       authority: None,
-      headers: {  },
-      body: { content: [].iter(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: [].iter(), trailers: fn() { Ok({}) } },
     },
   )
   inspect!(

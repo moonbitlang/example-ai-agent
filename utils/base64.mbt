@@ -56,7 +56,7 @@ fn char_to_index(char : Char, url_safe : Bool) -> Int {
 /// Encode binary to ascii text following Base64 defined in RFC 4648
 pub fn base64_encode(
   bytes : Iter[Bytes],
-  ~url_safe : Bool = false
+  url_safe~ : Bool = false
 ) -> Iter[Char] {
   Iter::new(
     fn(f) {
@@ -71,18 +71,18 @@ pub fn base64_encode(
             buffer = byte.to_int().land(0b11).lsl(4)
           }
           1 => {
-            if (index_to_char(buffer.lor(byte.to_int().lsr(4)), url_safe) |> f) ==
+            if (index_to_char(buffer | byte.to_int().lsr(4), url_safe) |> f) ==
               IterEnd {
               return IterEnd
             }
             buffer = byte.to_int().land(0b1111).lsl(2)
           }
           2 => {
-            if (index_to_char(buffer.lor(byte.to_int().lsr(6)), url_safe) |> f) ==
+            if (index_to_char(buffer | byte.to_int().lsr(6), url_safe) |> f) ==
               IterEnd {
               return IterEnd
             }
-            if (index_to_char(byte.to_int().land(0b111111), url_safe) |> f) ==
+            if (index_to_char(byte.to_int() & 0b111111, url_safe) |> f) ==
               IterEnd {
               return IterEnd
             }
@@ -145,7 +145,7 @@ test "base64 encode" {
 /// If the string is not padded correctly, an empty `Bytes` will be returned
 pub fn base64_decode(
   input : Iter[Char],
-  ~url_safe : Bool = false
+  url_safe~ : Bool = false
 ) -> Iter[Byte] {
   Iter::new(
     fn(f) {

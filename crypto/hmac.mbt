@@ -16,18 +16,18 @@
 
 pub fn hmac(
   content : Iter[Byte],
-  ~hash : HashAlgorithm,
-  ~secret : Bytes
+  hash~ : HashAlgorithm,
+  secret~ : Bytes
 ) -> Bytes {
   // block length of the hash function
   // TODO: it may not be 64 for all hash algorithms
   let b = 64
   let k = if secret.length() > b { hash.hash(secret.iter()) } else { secret }
   let ipad = k.iter() + Bytes::new(b - k.length()).iter()
-    |> Iter::map(fn(i) { i.lxor(b'\x36') })
+    |> Iter::map(fn(i) { i ^ b'\x36' })
   let out = hash.hash(ipad + content)
   let opad = k.iter() + Bytes::new(b - k.length()).iter()
-    |> Iter::map(fn(i) { i.lxor(b'\x5C') })
+    |> Iter::map(fn(i) { i ^ b'\x5C' })
   hash.hash(opad + out.iter())
 }
 

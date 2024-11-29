@@ -2,7 +2,7 @@
 /// The type of a filesystem object referenced by a descriptor.
 ///
 /// Note: This was called `filetype` in earlier versions of WASI.
-pub enum DescriptorType {
+pub(all) enum DescriptorType {
   UNKNOWN
   BLOCK_DEVICE
   CHARACTER_DEVICE
@@ -43,13 +43,13 @@ pub fn DescriptorType::from(self : Int) -> DescriptorType {
 /// Descriptor flags.
 ///
 /// Note: This was called `fdflags` in earlier versions of WASI.
-pub type DescriptorFlags Byte derive(Show, Eq)
+pub(all) type DescriptorFlags Byte derive(Show, Eq)
 
 pub fn DescriptorFlags::default() -> DescriptorFlags {
   b'\x00'
 }
 
-pub enum DescriptorFlagsFlag {
+pub(all) enum DescriptorFlagsFlag {
   READ
   WRITE
   FILE_INTEGRITY_SYNC
@@ -74,7 +74,7 @@ pub fn DescriptorFlags::set(
   other : DescriptorFlagsFlag
 ) -> DescriptorFlags {
   let DescriptorFlags(flag) = self
-  flag.lor(other.value())
+  flag | other.value()
 }
 
 pub fn DescriptorFlags::unset(
@@ -82,7 +82,7 @@ pub fn DescriptorFlags::unset(
   other : DescriptorFlagsFlag
 ) -> DescriptorFlags {
   let DescriptorFlags(flag) = self
-  flag.land(other.value().lnot())
+  flag & other.value().lnot()
 }
 
 pub fn DescriptorFlags::is_set(
@@ -90,17 +90,17 @@ pub fn DescriptorFlags::is_set(
   other : DescriptorFlagsFlag
 ) -> Bool {
   let DescriptorFlags(flag) = self
-  flag.land(other.value()) == other.value()
+  (flag & other.value()) == other.value()
 }
 
 /// Flags determining the method of how paths are resolved.
-pub type PathFlags Byte derive(Show, Eq)
+pub(all) type PathFlags Byte derive(Show, Eq)
 
 pub fn PathFlags::default() -> PathFlags {
   b'\x00'
 }
 
-pub enum PathFlagsFlag {
+pub(all) enum PathFlagsFlag {
   SYMLINK_FOLLOW
 }
 
@@ -112,27 +112,27 @@ fn PathFlagsFlag::value(self : PathFlagsFlag) -> Byte {
 
 pub fn PathFlags::set(self : PathFlags, other : PathFlagsFlag) -> PathFlags {
   let PathFlags(flag) = self
-  flag.lor(other.value())
+  flag | other.value()
 }
 
 pub fn PathFlags::unset(self : PathFlags, other : PathFlagsFlag) -> PathFlags {
   let PathFlags(flag) = self
-  flag.land(other.value().lnot())
+  flag & other.value().lnot()
 }
 
 pub fn PathFlags::is_set(self : PathFlags, other : PathFlagsFlag) -> Bool {
   let PathFlags(flag) = self
-  flag.land(other.value()) == other.value()
+  (flag & other.value()) == other.value()
 }
 
 /// Open flags used by `open-at`.
-pub type OpenFlags Byte derive(Show, Eq)
+pub(all) type OpenFlags Byte derive(Show, Eq)
 
 pub fn OpenFlags::default() -> OpenFlags {
   b'\x00'
 }
 
-pub enum OpenFlagsFlag {
+pub(all) enum OpenFlagsFlag {
   CREATE
   DIRECTORY
   EXCLUSIVE
@@ -150,23 +150,23 @@ fn OpenFlagsFlag::value(self : OpenFlagsFlag) -> Byte {
 
 pub fn OpenFlags::set(self : OpenFlags, other : OpenFlagsFlag) -> OpenFlags {
   let OpenFlags(flag) = self
-  flag.lor(other.value())
+  flag | other.value()
 }
 
 pub fn OpenFlags::unset(self : OpenFlags, other : OpenFlagsFlag) -> OpenFlags {
   let OpenFlags(flag) = self
-  flag.land(other.value().lnot())
+  flag & other.value().lnot()
 }
 
 pub fn OpenFlags::is_set(self : OpenFlags, other : OpenFlagsFlag) -> Bool {
   let OpenFlags(flag) = self
-  flag.land(other.value()) == other.value()
+  (flag & other.value()) == other.value()
 }
 
 /// File attributes.
 ///
 /// Note: This was called `filestat` in earlier versions of WASI.
-pub struct DescriptorStat {
+pub(all) struct DescriptorStat {
   type_ : DescriptorType
   link_count : UInt64
   size : UInt64
@@ -176,14 +176,14 @@ pub struct DescriptorStat {
 } derive(Show, Eq)
 
 /// When setting a timestamp, this gives the value to set it to.
-pub enum NewTimestamp {
+pub(all) enum NewTimestamp {
   NoChange
   Now
   Timestamp(@wallClock.Datetime)
 } derive(Show, Eq)
 
 /// A directory entry.
-pub struct DirectoryEntry {
+pub(all) struct DirectoryEntry {
   type_ : DescriptorType
   name : String
 } derive(Show, Eq)
@@ -192,7 +192,7 @@ pub struct DirectoryEntry {
 /// Not all of these error codes are returned by the functions provided by this
 /// API; some are used in higher-level library layers, and others are provided
 /// merely for alignment with POSIX.
-pub type! ErrorCode {
+pub(all) type! ErrorCode {
   ACCESS
   WOULD_BLOCK
   ALREADY
@@ -318,7 +318,7 @@ pub fn ErrorCode::from(self : Int) -> ErrorCode {
 }
 
 /// File or memory access pattern advisory information.
-pub enum Advice {
+pub(all) enum Advice {
   NORMAL
   SEQUENTIAL
   RANDOM
@@ -352,7 +352,7 @@ pub fn Advice::from(self : Int) -> Advice {
 
 /// A 128-bit hash value, split into parts because wasm doesn't have a
 /// 128-bit integer type.
-pub struct MetadataHashValue {
+pub(all) struct MetadataHashValue {
   lower : UInt64
   upper : UInt64
 } derive(Show, Eq)
@@ -360,7 +360,7 @@ pub struct MetadataHashValue {
 /// A descriptor is a reference to a filesystem object, which may be a file,
 /// directory, named pipe, special file, or other object on which filesystem
 /// calls may be made.
-pub type Descriptor Int derive(Show, Eq)
+pub(all) type Descriptor Int derive(Show, Eq)
 
 /// Drops a resource handle.
 pub fn Descriptor::drop(self : Descriptor) -> Unit {
@@ -369,7 +369,7 @@ pub fn Descriptor::drop(self : Descriptor) -> Unit {
 }
 
 /// A stream of directory entries.
-pub type DirectoryEntryStream Int derive(Show, Eq)
+pub(all) type DirectoryEntryStream Int derive(Show, Eq)
 
 /// Drops a resource handle.
 pub fn DirectoryEntryStream::drop(self : DirectoryEntryStream) -> Unit {

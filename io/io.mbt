@@ -68,13 +68,13 @@ pub fn writeln(bytes : Iter[Bytes], stream : @streams.OutputStream) -> Unit {
   stream.blocking_write_and_flush(b"\n") |> ignore
 }
 
-pub fn print(string : String, ~stream : @streams.OutputStream = stdout) -> Unit {
+pub fn print(string : String, stream~ : @streams.OutputStream = stdout) -> Unit {
   string.iter() |> @utils.encode_utf8 |> write(stream)
 }
 
 pub fn println(
   string : String,
-  ~stream : @streams.OutputStream = stdout
+  stream~ : @streams.OutputStream = stdout
 ) -> Unit {
   string.iter() |> @utils.encode_utf8 |> writeln(stream)
 }
