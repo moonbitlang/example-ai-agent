@@ -14,12 +14,12 @@
 
 // X.690 encoding format
 
-pub enum X690Construction {
+pub(all) enum X690Construction {
   Primitive
   Constructed
 } derive(Show)
 
-pub enum X690Class {
+pub(all) enum X690Class {
   Universal
   Application
   ContextSpecific
@@ -60,7 +60,7 @@ fn X690Class::to_int(self : X690Class) -> Int {
   }
 }
 
-pub enum X690Type {
+pub(all) enum X690Type {
   Boolean
   Integer
   BitString
@@ -179,7 +179,7 @@ fn X690Type::to_int(self : X690Type) -> Int {
   }
 }
 
-pub struct X690 {
+pub(all) struct X690 {
   tag : X690Type
   construction : X690Construction
   class : X690Class
@@ -187,20 +187,20 @@ pub struct X690 {
 } derive(Show)
 
 priv struct Tag {
-  mut tag : Int
+  tag : Int
   class : X690Class
   construction : X690Construction
 }
 
 priv enum State {
   Init
-  Tag(mut ~ty : Int, X690Construction, X690Class)
-  Length(Tag, mut ~len : Int, mut ~cnt : Int?)
-  Content(Tag, Buffer, mut ~len : Int?, mut ~end_cnt : Int)
+  Tag(ty~ : Int, X690Construction, X690Class)
+  Length(Tag, mut len~ : Int, mut cnt~ : Int?)
+  Content(Tag, @buffer.Buffer, mut len~ : Int?, mut end_cnt~ : Int)
 }
 
-fn variable_length_encoding(buffer : Buffer, number : UInt) -> Unit {
-  let number = number.reinterpret_as_int()
+fn variable_length_encoding(buffer : @buffer.Buffer, number : UInt) -> Unit {
+  let number = number
   let len = 32 - number.clz()
   let mod = len % 7
   let n = len / 7
@@ -208,19 +208,19 @@ fn variable_length_encoding(buffer : Buffer, number : UInt) -> Unit {
     buffer.write_byte(number.to_byte())
     return
   } else if mod != 0 {
-    buffer.write_byte(number.lsr(n * 7) | 0b1000_0000 |> Int::to_byte)
+    buffer.write_byte((number >> (n * 7)) | 0b1000_0000 |> UInt::to_byte)
   }
   for i = n - 1; i > 0; i = i - 1 {
     buffer.write_byte(
-      (number.lsr(i * 7) & 0b111_1111) | 0b1000_0000 |> Int::to_byte,
+      ((number >> (i * 7)) & 0b111_1111) | 0b1000_0000 |> UInt::to_byte,
     )
   } else {
-    buffer.write_byte((number & 0b111_1111) | 0b0000_0000 |> Int::to_byte)
+    buffer.write_byte((number & 0b111_1111) | 0b0000_0000 |> UInt::to_byte)
   }
 }
 
 test "variable length encoding" {
-  let buffer = Buffer::new()
+  let buffer = @buffer.new()
   variable_length_encoding(buffer, 311)
   inspect!(
     buffer.to_bytes(),
@@ -228,7 +228,7 @@ test "variable length encoding" {
       #|b"\x82\x37"
     ,
   )
-  let buffer = Buffer::new()
+  let buffer = @buffer.new()
   variable_length_encoding(buffer, 50)
   inspect!(
     buffer.to_bytes(),
@@ -239,8 +239,8 @@ test "variable length encoding" {
 }
 
 pub fn oid_to_bytes(tree : Array[Int]) -> Bytes {
-  let buffer = Buffer::new()
-  let [first, second, .. as rest] = tree
+  let buffer = @buffer.new()
+  guard let [first, second, .. as rest] = tree
   buffer.write_byte((first * 40 + second).to_byte())
   for value in rest {
     variable_length_encoding(buffer, value.reinterpret_as_uint())
@@ -250,7 +250,7 @@ pub fn oid_to_bytes(tree : Array[Int]) -> Bytes {
 
 /// Assuming length is definite
 pub fn to_bytes(self : X690) -> Bytes {
-  let buffer = Buffer::new()
+  let buffer = @buffer.new()
   if self.tag.to_int() < 30 {
     buffer.write_byte(
       self.tag.to_int() |
@@ -267,7 +267,7 @@ pub fn to_bytes(self : X690) -> Bytes {
     )
     variable_length_encoding(buffer, self.tag.to_int().reinterpret_as_uint())
   }
-  let length = self.content.length()
+  let length = self.content.length().reinterpret_as_uint()
   let length_len = 32 - length.clz()
   if length_len < 8 {
     buffer.write_byte(length.to_byte())
@@ -277,7 +277,7 @@ pub fn to_bytes(self : X690) -> Bytes {
     let len = if mod == 0 { n } else { n + 1 }
     buffer.write_byte((0b1000_0000 | len).to_byte())
     for i = len - 1; i >= 0; i = i - 1 {
-      buffer.write_byte((length.lsr(i * 8) & 0xff).to_byte())
+      buffer.write_byte(((length >> (i * 8)) & 0xff).to_byte())
     }
   }
   buffer.write_bytes(self.content)
@@ -326,37 +326,37 @@ pub fn X690::from_iter(bytes : Iter[Byte]) -> Iter[X690] {
               state = Length({ tag, construction, class }, len=0, cnt=None)
             }
           }
-          Tag(~ty, construction, class) => {
+          Tag(ty~, construction, class) => {
             let ty = (ty << 7) | (byte.to_int() & 0b0111_1111)
             if (byte.to_int() & 0b1000_0000) == 0 {
               state = Length({ tag: ty, construction, class }, len=0, cnt=None)
             } else {
-              state = Tag(~ty, construction, class)
+              state = Tag(ty~, construction, class)
             }
           }
           Length(tag, cnt=None, ..) as len_state =>
             if (byte.to_int() & 0b1000_0000) == 0 {
               state = Content(
                 tag,
-                Buffer::new(),
+                @buffer.new(),
                 len=Some(byte.to_int()),
                 end_cnt=0,
               )
             } else {
               let n = byte.to_int() & 0b0111_1111
               if n == 0 {
-                state = Content(tag, Buffer::new(), len=None, end_cnt=0)
+                state = Content(tag, @buffer.new(), len=None, end_cnt=0)
               } else {
                 len_state.cnt = Some(n)
               }
             }
-          Length(tag, ~len, cnt=Some(n)) as len_state => {
+          Length(tag, len~, cnt=Some(n)) as len_state => {
             len_state.len = (len << 8) | byte.to_int()
             len_state.cnt = Some(n - 1)
             if n == 1 {
               state = Content(
                 tag,
-                Buffer::new(),
+                @buffer.new(),
                 len=Some(len_state.len),
                 end_cnt=0,
               )
@@ -436,11 +436,11 @@ test "decode pem file" {
     #|N53L9QKBgQCZd0K6RFhhdJW+Eh7/aIk8m8Cho4Im5vFOFrn99e4HKYF5BJnoQp4p
     #|1QTLMs2C3hQXdJ49LTLp0xr77zPxNWUpoN4XBwqDWL0t0MYkRZFoCAG7Jy2Pgegv
     #|uOuIr6NHfdgGBgOTeucG+mPtADsLYurEQuUlfkl5hR7LgwF+3q8bHQ==
-  let [sequence] = key.split("\n").flat_map(String::iter)
+  guard let [sequence] = (key.split("\n").flat_map(String::iter)
     |> @utils.base64_decode
     |> from_iter
-    |> Iter::collect
-  let [
+    |> Iter::collect)
+  guard let [
     version,
     modulus,
     public_exponent,
@@ -450,7 +450,7 @@ test "decode pem file" {
     exponent1,
     exponent2,
     coefficient,
-  ] = sequence.content.iter()
+  ] = (sequence.content.iter()
     |> from_iter
     |> Iter::map(
       fn {
@@ -459,7 +459,7 @@ test "decode pem file" {
         _ => panic()
       },
     )
-    |> Iter::collect
+    |> Iter::collect)
   assert_eq!(modulus.to_octets().length() * 8, 2048)
   inspect!(version, content="0")
   inspect!(

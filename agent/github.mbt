@@ -14,18 +14,18 @@
 
 let wrong_request : @http.Response = @http.response(
   status=400,
-  body={ content: [b"Wrong request"].iter(), trailers: fn() { Ok({  }) } },
+  body={ content: [b"Wrong request"].iter(), trailers: fn() { Ok({}) } },
 )
 
 let internal_error : @http.Response = @http.response(
   status=500,
-  body={ content: [b"Internal error"].iter(), trailers: fn() { Ok({  }) } },
+  body={ content: [b"Internal error"].iter(), trailers: fn() { Ok({}) } },
 )
 
 let github_api = "api.github.com"
 
 /// Main handler for the agent
-fn handler(~client : @http.HTTPHandler = @http.client) -> @http.HTTPHandler {
+fn handler(client~ : @http.HTTPHandler = @http.client) -> @http.HTTPHandler {
   fn(request : @http.Request) {
     let { headers, body, .. } : @http.Request = request
     let event = match headers {
@@ -354,7 +354,7 @@ fn create_comment(
     },
     body={
       content: content.stringify().iter() |> @utils.encode_utf8,
-      trailers: fn() { Ok({  }) },
+      trailers: fn() { Ok({}) },
     },
   )
   let response = (client._)(request).unwrap_or_error!()
@@ -404,7 +404,7 @@ fn update_comment(
     },
     body={
       content: content.stringify().iter() |> @utils.encode_utf8,
-      trailers: fn() { Ok({  }) },
+      trailers: fn() { Ok({}) },
     },
   )
   let response = (client._)(request).unwrap_or_error!()
@@ -453,7 +453,7 @@ fn get_code_review_from_deepseek(
     Some("api.siliconflow.cn"),
     path="/v1/chat/completions",
     method=@types.Post,
-    scheme=Some(@types.Https),
+    scheme=@types.Https,
     headers={
       "Content-Type": [b"application/json"],
       "Authorization": [
@@ -465,7 +465,7 @@ fn get_code_review_from_deepseek(
     },
     body={
       content: content.stringify().iter() |> @utils.encode_utf8,
-      trailers: fn() { Ok({  }) },
+      trailers: fn() { Ok({}) },
     },
   )
   let response = (client._)(request).unwrap_or_error!()

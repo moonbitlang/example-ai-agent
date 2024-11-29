@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub struct Request {
+pub(all) struct Request {
   context : Map[String, String]
   method : @types.Method
   scheme : @types.Scheme?
@@ -26,28 +26,28 @@ pub struct Request {
 
 pub fn request(
   authority : String?,
-  ~path : String = "/",
-  ~method : @types.Method = Get,
-  ~query : String = "",
-  ~fragment : String = "",
-  ~scheme : @types.Scheme? = None,
-  ~headers : Map[String, Array[Bytes]] = {  },
-  ~body : Body = { content: [].iter(), trailers: fn() { Ok({  }) } },
-  ~context : Map[String, String] = {  }
+  path~ : String = "/",
+  method~ : @types.Method = Get,
+  query~ : String = "",
+  fragment~ : String = "",
+  scheme? : @types.Scheme,
+  headers~ : Map[String, Array[Bytes]] = {},
+  body~ : Body = { content: [].iter(), trailers: fn() { Ok({}) } },
+  context~ : Map[String, String] = {}
 ) -> Request {
   { context, method, scheme, authority, path, query, fragment, headers, body }
 }
 
-pub struct Response {
+pub(all) struct Response {
   status : UInt
   headers : Map[String, Array[Bytes]]
   body : Body
 }
 
 pub fn response(
-  ~status : UInt = 200,
-  ~headers : Map[String, Array[Bytes]] = {  },
-  ~body : Body = { content: [].iter(), trailers: fn() { Ok({  }) } }
+  status~ : UInt = 200,
+  headers~ : Map[String, Array[Bytes]] = {},
+  body~ : Body = { content: [].iter(), trailers: fn() { Ok({}) } }
 ) -> Response {
   { status, headers, body }
 }
@@ -59,13 +59,13 @@ pub fn response(
 /// The trailers are only available after the content has been fully consumed.
 /// 
 /// The body of the request should be consumed
-pub struct Body {
+pub(all) struct Body {
   content : Iter[Bytes]
   trailers : () -> Result[Map[String, Array[Bytes]], @types.ErrorCode]
 }
 
 pub fn json(self : Body) -> Json!@json.ParseError {
-  let json = Buffer::new()
+  let json = @buffer.new()
   self.content.flat_map(Bytes::iter).iter()
   |> @utils.decode_utf8()
   |> Iter::each(fn(ch) { json.write_char(ch) })
@@ -78,24 +78,24 @@ pub fn text(self : Body) -> String {
   |> @utils.iter_to_string
 }
 
-pub type HTTPHandler (Request) -> Result[Response, @types.ErrorCode]
+pub(all) type HTTPHandler (Request) -> Result[Response, @types.ErrorCode]
 
-pub type Middleware (HTTPHandler) -> HTTPHandler
+pub(all) type Middleware (HTTPHandler) -> HTTPHandler
 
-pub type Router Array[Route]
+pub(all) type Router Array[Route]
 
-pub enum Route {
+pub(all) enum Route {
   Routed(String, @types.Method, HTTPHandler)
   Scoped(String, Array[Middleware], Router)
 }
 
 pub fn to_handler(
   self : Router,
-  ~not_found : () -> Response = fn() {
+  not_found~ : () -> Response = fn() {
     Response::{
       status: 404,
-      headers: {  },
-      body: { content: Iter::empty(), trailers: fn() { Ok({  }) } },
+      headers: {},
+      body: { content: Iter::empty(), trailers: fn() { Ok({}) } },
     }
   }
 ) -> HTTPHandler {
@@ -111,7 +111,7 @@ pub fn to_handler(
     }
     let paths = request.path.split("/").collect()
     let pmatch = pmatch.split("/").collect()
-    let context = {  }
+    let context = {}
     loop paths[:], pmatch[:] {
       [], [] => {
         context.each(fn(k, v) { request.context[k] = v })
@@ -120,7 +120,7 @@ pub fn to_handler(
       [], [_, ..] => None
       [head, .. as rest], [] => {
         context.each(fn(k, v) { request.context[k] = v })
-        Some(["", head, ..rest].join("/"))
+        Some(["", head, ..rest] |> String::concat(separator="/"))
       }
       [head, .. as rest], [phead, .. as prest] =>
         if phead.starts_with(":") {
@@ -146,7 +146,7 @@ pub fn to_handler(
               match router {
                 Routed(_, _, handler) => break (handler._)({ ..request, path, })
                 Scoped(_, middlewares, routers) => {
-                  let handler = routers |> to_handler(~not_found)
+                  let handler = routers |> to_handler(not_found~)
                   let handler = middlewares.rev_fold(
                     init=handler,
                     fn { handler, middleware => (middleware._)(handler) },
@@ -172,20 +172,25 @@ pub fn and_then(self : Middleware, other : Middleware) -> Middleware {
   }
 }
 
+pub fn apply(
+  self : HTTPHandler,
+  request : Request
+) -> Response!@types.ErrorCode {
+  (self._)(request).unwrap_or_error!()
+}
+
 pub fn serve(
   self : HTTPHandler
 ) -> (@types.IncomingRequest, @types.ResponseOutparam) -> Unit {
   fn(incoming, outparam) {
     let path_with_query = incoming.path_with_query().or("").split("?")
-    let query_with_fragment = path_with_query
-      .drop(1)
-      .collect()
-      .join("?")
-      .split("#")
+    let query_with_fragment = path_with_query.drop(1).collect()
+      |> String::concat(separator="?")
+      |> String::split("#")
     let headers = @utils.use(
       incoming.headers(),
       fn(headers) {
-        let map : Map[String, Array[Bytes]] = {  }
+        let map : Map[String, Array[Bytes]] = {}
         headers
         .entries()
         .each(
@@ -202,7 +207,7 @@ pub fn serve(
     )
     let length = headers["content-length"].map(
       fn(bytes) {
-        let buffer = Buffer::new()
+        let buffer = @buffer.new()
         bytes[0].iter()
         |> @utils.decode_utf8()
         |> Iter::each(fn(char) { buffer.write_char(char) })
@@ -210,13 +215,16 @@ pub fn serve(
       },
     )
     let request = {
-      context: {  },
+      context: {},
       method: incoming.method(),
       scheme: incoming.scheme(),
       authority: incoming.authority(),
-      path: path_with_query.take(1).collect().join(""),
-      query: query_with_fragment.take(1).collect().join(""),
-      fragment: query_with_fragment.drop(1).collect().join("#"),
+      path: String::concat(path_with_query.take(1).collect()),
+      query: String::concat(query_with_fragment.take(1).collect()),
+      fragment: String::concat(
+        query_with_fragment.drop(1).collect(),
+        separator="#",
+      ),
       headers,
       body: parse_body(
         incoming.consume().unwrap(),
@@ -260,8 +268,8 @@ pub let client : HTTPHandler = HTTPHandler(
       outgoing_request.set_scheme(request.scheme) |> ignore
       outgoing_request.set_authority(request.authority) |> ignore
       let path = request.path +
-        if request.query.is_empty() { "" } else { "?" + request.query } +
-        if request.fragment.is_empty() { "" } else { "#" + request.fragment }
+        (if request.query.is_empty() { "" } else { "?" + request.query }) +
+        (if request.fragment.is_empty() { "" } else { "#" + request.fragment })
       outgoing_request.set_path_with_query(Some(path)) |> ignore
       let body = outgoing_request.body().unwrap()
       let future_response = match
@@ -273,19 +281,24 @@ pub let client : HTTPHandler = HTTPHandler(
         body.write().unwrap(),
         fn(stream) { @io.write(request.body.content, stream) },
       )
-      let trailers = @types.fields()
       match (request.body.trailers)() {
-        Ok(trailers) => trailers.each(fn(k, v) { trailers.set(k, v) |> ignore })
+        Ok(trailers) =>
+          if trailers.is_empty() {
+            body.finish(None) |> ignore
+          } else {
+            let ts = @types.fields()
+            trailers.each(fn(k, v) { ts.set(k, v) |> ignore })
+            body.finish(Some(ts)) |> ignore
+          }
         Err(_) => () // nothing we can do
       }
-      body.finish(Some(trailers)) |> ignore
       @utils.use(future_response.subscribe(), @poll.Pollable::block)
       let response = match future_response.get().unwrap().unwrap() {
         Ok(response) => response
         Err(err) => return Err(err)
       }
       let headers = {
-        let map : Map[String, Array[Bytes]] = {  }
+        let map : Map[String, Array[Bytes]] = {}
         let headers = response.headers()
         headers
         .entries()
@@ -315,7 +328,7 @@ pub let client : HTTPHandler = HTTPHandler(
         headers: @utils.use(
           response.headers(),
           fn(headers) {
-            let map : Map[String, Array[Bytes]] = {  }
+            let map : Map[String, Array[Bytes]] = {}
             headers
             .entries()
             .each(
@@ -398,7 +411,7 @@ fn parse_body(
         None => {
           let future_trailers = incomingBody.finish()
           @utils.use(future_trailers.subscribe(), @poll.Pollable::block)
-          let map : Map[String, Array[Bytes]] = {  }
+          let map : Map[String, Array[Bytes]] = {}
           trailers.val = Some(Ok(map))
           match future_trailers.get().unwrap().unwrap() {
             Ok(Some(trailers)) => {
